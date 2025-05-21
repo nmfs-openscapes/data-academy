@@ -1,0 +1,167 @@
+---
+title: "COVID-19 Trends"
+format: markdown_github
+---
+
+This is a guided project for dataquest, investigating COVID-19 trends.
+
+## 2. Understanding the data
+
+```{r}
+library(readr)
+library(dplyr)
+```
+
+```{r}
+#| cache: true
+covid_df <- read_csv(
+  "https://dq-content.s3.amazonaws.com/505/covid19.csv",
+  show_col_types = FALSE
+)
+```
+
+```{r}
+dim(covid_df)
+vector_cols <- colnames(covid_df)
+vector_cols
+```
+
+`vector_cols` represents a *character vector*
+
+```{r}
+head(covid_df)
+
+glimpse(covid_df)
+```
+
+`glimpse()` gives you a preview of all of the columns and their types
+
+## 3. Isolating the rows we need
+
+```{r}
+covid_df_all_states <- covid_df |>
+  filter(Province_State == "All States") |>
+  select(-Province_State)
+```
+
+
+## 4. Isolating the columns we need
+
+```{r}
+covid_df_all_states_daily <- covid_df_all_states |>
+  select(
+    Date,
+    Country_Region,
+    active,
+    hospitalizedCurr,
+    daily_tested,
+    daily_positive
+  )
+```
+
+## 5. Extracting the Top Ten Countries with Most Covid-19 Cases
+
+```{r}
+covid_df_all_states_daily_sum <- covid_df_all_states_daily |>
+  group_by(Country_Region) |>
+  summarise(
+    tested = sum(daily_tested),
+    positive = sum(daily_positive),
+    active = sum(active),
+    hospitalized = sum(hospitalizedCurr)
+  ) |>
+  arrange(desc(tested))
+
+covid_df_all_states_daily_sum
+```
+
+
+```{r}
+covid_top_10 <- head(covid_df_all_states_daily_sum, 10)
+```
+
+## 6. Identifying the Highest Positive Against Tested Cases
+
+```{r}
+countries <- covid_top_10$Country_Region
+tested_cases <- covid_top_10$tested
+positive_cases <- covid_top_10$positive
+active_cases <- covid_top_10$active
+hospitalized_cases <- covid_top_10$hospitalized
+```
+
+
+```{r}
+names(tested_cases) <- countries
+names(positive_cases) <- countries
+names(active_cases) <- countries
+names(hospitalized_cases) <- countries
+```
+
+
+```{r}
+positive_cases / tested_cases
+
+positive_tested_top_3 <- positive_cases[c(
+  "United Kingdom",
+  "United States",
+  "Turkey"
+)] /
+  tested_cases[c("United Kingdom", "United States", "Turkey")]
+
+positive_tested_top_3
+```
+
+## 7. Keeping relevant information
+
+```{r}
+united_kingodm <- c(0.11, 1473672, 166909, 0, 0)
+united_states <- c(0.10, 17282363, 1877179, 0, 0)
+turkey <- c(0.08, 2031192, 163941, 2980960, 0)
+```
+
+
+```{r}
+covid_mat <- rbind(united_kingodm, united_states, turkey)
+
+colnames(covid_mat) <- c(
+  "Ratio",
+  "tested",
+  "positive",
+  "active",
+  "hospitalized"
+)
+
+covid_mat
+```
+
+## 8. Putting it all together: Lists
+
+```{r}
+question <- "Which countries have had the highest number of positive cases against the number of tests?"
+answer <- c("Positive tested cases" = positive_tested_top_3)
+```
+
+
+```{r}
+data_structure_list <- list(
+  dataframes = list(
+    covid_df,
+    covid_df_all_states,
+    covid_df_all_states_daily,
+    covid_top_10
+  ),
+  matrices = list(covid_mat),
+  vectors = list(vector_cols, countries)
+)
+```
+
+```{r}
+covid_analysis_list <- list(
+  question,
+  answer,
+  data_structure_list
+)
+
+covid_analysis_list[[2]]
+```
