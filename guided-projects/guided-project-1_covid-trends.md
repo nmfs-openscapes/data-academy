@@ -21,12 +21,25 @@ library(dplyr)
 
         intersect, setdiff, setequal, union
 
+Here I’m reading the csv directly from the URL provided; you can
+download the file and read it locally as well.
+
+I specify `show_col_types = FALSE` to suppress the verbose messages
+showing all of the column types it guessed. It’s often useful to see
+this information at least the first time you read in a dataset to
+confirm it is treating the columns as you would expect.
+
 ``` r
 covid_df <- read_csv(
   "https://dq-content.s3.amazonaws.com/505/covid19.csv",
   show_col_types = FALSE
 )
 ```
+
+Here we use `dim()` to show the number of rows and columns, then
+`colnames()` to get the column names. They are stored in the object
+called `vector_cols`. By running the object `vector_cols` on its own it
+prints the contents of that object (the column names).
 
 ``` r
 dim(covid_df)
@@ -88,9 +101,17 @@ glimpse(covid_df)
     $ daily_tested            <dbl> 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
     $ daily_positive          <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
 
+`head()` shows you the first `n` rows (where `n` = 6 by default, but you
+can change it).
+
 `glimpse()` gives you a preview of all of the columns and their types
 
 ## 3. Isolating the rows we need
+
+Here we use `filter()` to only keep the rows where the value in the
+`Province_State` is equal to `"All States"`. Then we use `select()` and
+specify `-Province_state` - the `-` sign *excludes* that column and
+keeps the rest.
 
 ``` r
 covid_df_all_states <- covid_df |>
@@ -99,6 +120,9 @@ covid_df_all_states <- covid_df |>
 ```
 
 ## 4. Isolating the columns we need
+
+Here we use `select()` again, but this time specify the columns we want
+to keep.
 
 ``` r
 covid_df_all_states_daily <- covid_df_all_states |>
@@ -113,6 +137,15 @@ covid_df_all_states_daily <- covid_df_all_states |>
 ```
 
 ## 5. Extracting the Top Ten Countries with Most Covid-19 Cases
+
+Using `group_by()` + `summarize()` is a very powerful and common way to
+aggregate values for different levels of a variable. Here we
+`group_by(Country_Region)` and then for each value (level) of
+`Country_Region` we calculate the sum of several numeric variables.
+
+Then we sort using `arrange()`, and specify `desc(tested)` to sort by
+`tested` in descending order. This can also be done with
+`arrange(-tested)`.
 
 ``` r
 covid_df_all_states_daily_sum <- covid_df_all_states_daily |>
@@ -142,6 +175,9 @@ covid_df_all_states_daily_sum
      9 Peru             976790    59497       0            0
     10 Poland           928256    23987  538203            0
     # ℹ 98 more rows
+
+We can then use `head()` with `n = 10` on the sorted data frame to get
+the top 10.
 
 ``` r
 covid_top_10 <- head(covid_df_all_states_daily_sum, 10)
