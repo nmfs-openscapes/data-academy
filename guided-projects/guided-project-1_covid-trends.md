@@ -185,6 +185,8 @@ covid_top_10 <- head(covid_df_all_states_daily_sum, 10)
 
 ## 6. Identifying the Highest Positive Against Tested Cases
 
+Extract the different columns into standalone vectors
+
 ``` r
 countries <- covid_top_10$Country_Region
 tested_cases <- covid_top_10$tested
@@ -193,12 +195,18 @@ active_cases <- covid_top_10$active
 hospitalized_cases <- covid_top_10$hospitalized
 ```
 
+Assign the vectors of values (cases) the names of the countries, using
+the `countries` character vector.
+
 ``` r
 names(tested_cases) <- countries
 names(positive_cases) <- countries
 names(active_cases) <- countries
 names(hospitalized_cases) <- countries
 ```
+
+Divide positive cases by tested to get positivity rates - look at these
+manually, and subset the two vectors by those country names
 
 ``` r
 positive_cases / tested_cases
@@ -222,6 +230,50 @@ positive_tested_top_3
 
     United Kingdom  United States         Turkey 
         0.11326062     0.10861819     0.08071172 
+
+### 6a. An alternative using vectors
+
+``` r
+positivity <- sort(positive_cases / tested_cases, decreasing = TRUE)
+
+positive_tested_top_3 <- positivity[1:3]
+```
+
+### 6b. An alternative using data frames
+
+The exercise is about testing your understanding of using and
+manipulating vectors, so the answers above do that well. However if I
+was doing this in real life I would keep the data frames and use dplyr
+to find what I want:
+
+``` r
+covid_top_10 |>
+  mutate(positivity = positive / tested) |>
+  arrange(desc(positivity)) |>
+  slice_head(n = 3)
+```
+
+    # A tibble: 3 × 6
+      Country_Region   tested positive  active hospitalized positivity
+      <chr>             <dbl>    <dbl>   <dbl>        <dbl>      <dbl>
+    1 United Kingdom  1473672   166909       0            0     0.113 
+    2 United States  17282363  1877179       0            0     0.109 
+    3 Turkey          2031192   163941 2980960            0     0.0807
+
+``` r
+## OR
+
+covid_top_10 |>
+  mutate(positivity = positive / tested) |>
+  slice_max(positivity, n = 3)
+```
+
+    # A tibble: 3 × 6
+      Country_Region   tested positive  active hospitalized positivity
+      <chr>             <dbl>    <dbl>   <dbl>        <dbl>      <dbl>
+    1 United Kingdom  1473672   166909       0            0     0.113 
+    2 United States  17282363  1877179       0            0     0.109 
+    3 Turkey          2031192   163941 2980960            0     0.0807
 
 ## 7. Keeping relevant information
 
@@ -256,6 +308,9 @@ covid_mat
 question <- "Which countries have had the highest number of positive cases against the number of tests?"
 answer <- c("Positive tested cases" = positive_tested_top_3)
 ```
+
+Today I learned that assigning a name to an already named vector using
+`c()` concatenates the new name with the old names, separated by a `.`!
 
 ``` r
 data_structure_list <- list(
