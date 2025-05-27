@@ -307,10 +307,23 @@ covid_mat
 ``` r
 question <- "Which countries have had the highest number of positive cases against the number of tests?"
 answer <- c("Positive tested cases" = positive_tested_top_3)
+
+question
 ```
 
-Today I learned that assigning a name to an already named vector using
-`c()` concatenates the new name with the old names, separated by a `.`!
+    [1] "Which countries have had the highest number of positive cases against the number of tests?"
+
+``` r
+answer
+```
+
+    Positive tested cases.United Kingdom  Positive tested cases.United States 
+                              0.11326062                           0.10861819 
+            Positive tested cases.Turkey 
+                              0.08071172 
+
+*Today I learned that assigning a name to an already named vector using
+`c()` concatenates the new name with the old names, separated by a `.`!*
 
 ``` r
 data_structure_list <- list(
