@@ -31,10 +31,14 @@ confirm it is treating the columns as you would expect.
 
 ``` r
 covid_df <- read_csv(
-  "https://dq-content.s3.amazonaws.com/505/covid19.csv",
+  "covid19.csv",
   show_col_types = FALSE
 )
+
+getwd()
 ```
+
+    [1] "/Users/andy/dev/nmfs-openscapes/data-academy/guided-projects"
 
 Here we use `dim()` to show the number of rows and columns, then
 `colnames()` to get the column names. They are stored in the object
@@ -117,7 +121,31 @@ keeps the rest.
 covid_df_all_states <- covid_df |>
   filter(Province_State == "All States") |>
   select(-Province_State)
+
+dim(covid_df_all_states)
 ```
+
+    [1] 3781   13
+
+``` r
+glimpse(covid_df_all_states)
+```
+
+    Rows: 3,781
+    Columns: 13
+    $ Date                    <date> 2020-01-20, 2020-01-22, 2020-01-23, 2020-01-2…
+    $ Continent_Name          <chr> "Asia", "North America", "North America", "Asi…
+    $ Two_Letter_Country_Code <chr> "KR", "US", "US", "KR", "US", "AU", "GB", "US"…
+    $ Country_Region          <chr> "South Korea", "United States", "United States…
+    $ positive                <dbl> 1, 1, 1, 2, 1, 4, 1, 1, 4, 0, 3, 1, 1, 5, 0, 0…
+    $ hospitalized            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    $ recovered               <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    $ death                   <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    $ total_tested            <dbl> 4, 1, 1, 27, 1, 0, 31, 1, 0, 3, 51, 52, 1, 0, …
+    $ active                  <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    $ hospitalizedCurr        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    $ daily_tested            <dbl> 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 12, 21, 0, 0, 0,…
+    $ daily_positive          <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0…
 
 ## 4. Isolating the columns we need
 
@@ -181,7 +209,22 @@ the top 10.
 
 ``` r
 covid_top_10 <- head(covid_df_all_states_daily_sum, 10)
+covid_top_10
 ```
+
+    # A tibble: 10 × 5
+       Country_Region   tested positive  active hospitalized
+       <chr>             <dbl>    <dbl>   <dbl>        <dbl>
+     1 United States  17282363  1877179       0            0
+     2 Russia         10542266   406368 6924890            0
+     3 Italy           4091291   251710 6202214      1699003
+     4 India           3692851    60959       0            0
+     5 Turkey          2031192   163941 2980960            0
+     6 Canada          1654779    90873   56454            0
+     7 United Kingdom  1473672   166909       0            0
+     8 Australia       1252900     7200  134586         6655
+     9 Peru             976790    59497       0            0
+    10 Poland           928256    23987  538203            0
 
 ## 6. Identifying the Highest Positive Against Tested Cases
 
@@ -203,26 +246,22 @@ names(tested_cases) <- countries
 names(positive_cases) <- countries
 names(active_cases) <- countries
 names(hospitalized_cases) <- countries
+
+hospitalized_cases
 ```
+
+     United States         Russia          Italy          India         Turkey 
+                 0              0        1699003              0              0 
+            Canada United Kingdom      Australia           Peru         Poland 
+                 0              0           6655              0              0 
 
 Divide positive cases by tested to get positivity rates - look at these
 manually, and subset the two vectors by those country names
 
 ``` r
-positive_cases / tested_cases
-```
+all_postivity <- positive_cases / tested_cases
 
-     United States         Russia          Italy          India         Turkey 
-       0.108618191    0.038546552    0.061523368    0.016507300    0.080711720 
-            Canada United Kingdom      Australia           Peru         Poland 
-       0.054915490    0.113260617    0.005746668    0.060910738    0.025840932 
-
-``` r
-positive_tested_top_3 <- positive_cases[c(
-  "United Kingdom",
-  "United States",
-  "Turkey"
-)] /
+positive_tested_top_3 <- positive_cases[c("United Kingdom", "United States","Turkey")] /
   tested_cases[c("United Kingdom", "United States", "Turkey")]
 
 positive_tested_top_3
@@ -237,7 +276,11 @@ positive_tested_top_3
 positivity <- sort(positive_cases / tested_cases, decreasing = TRUE)
 
 positive_tested_top_3 <- positivity[1:3]
+positive_tested_top_3
 ```
+
+    United Kingdom  United States         Turkey 
+        0.11326062     0.10861819     0.08071172 
 
 ### 6b. An alternative using data frames
 
@@ -278,13 +321,13 @@ covid_top_10 |>
 ## 7. Keeping relevant information
 
 ``` r
-united_kingodm <- c(0.11, 1473672, 166909, 0, 0)
+united_kingdom <- c(0.11, 1473672, 166909, 0, 0)
 united_states <- c(0.10, 17282363, 1877179, 0, 0)
 turkey <- c(0.08, 2031192, 163941, 2980960, 0)
 ```
 
 ``` r
-covid_mat <- rbind(united_kingodm, united_states, turkey)
+covid_mat <- rbind(united_kingdom, united_states, turkey)
 
 colnames(covid_mat) <- c(
   "Ratio",
@@ -298,7 +341,7 @@ covid_mat
 ```
 
                    Ratio   tested positive  active hospitalized
-    united_kingodm  0.11  1473672   166909       0            0
+    united_kingdom  0.11  1473672   166909       0            0
     united_states   0.10 17282363  1877179       0            0
     turkey          0.08  2031192   163941 2980960            0
 
