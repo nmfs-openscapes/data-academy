@@ -18,23 +18,36 @@ da_curriculum <- read_sheet(
 
 ## Save all the data to a dated file for later comparison
 
-# req_base <- request("https://app.dataquest.io/api/team-reports/") |>
-#   req_url_path_append(Sys.getenv("DATAQUEST_TEAM_ID")) |>
-#   req_headers("API-Key" = Sys.getenv("DATAQUEST_API_KEY"))
+req_base <- request("https://app.dataquest.io/api/team-reports/") |>
+  req_url_path_append(Sys.getenv("DATAQUEST_TEAM_ID")) |>
+  req_headers("API-Key" = Sys.getenv("DATAQUEST_API_KEY"))
 
-# fs::dir_create("progress-data")
-# resp_all <- req_base |>
-#   req_url_path_append("all") |>
-#   req_perform(path = "progress-data/2025-06-16_dataquest-team-data.json")
+date <- Sys.Date()
+
+fs::dir_create("progress-data")
+resp_all <- req_base |>
+  req_url_path_append("all") |>
+  req_perform(
+    path = glue::glue("progress-data/{date}_dataquest-team-data.json")
+  )
 
 all_data <- jsonlite::read_json(
-  "progress-data/2025-06-16_dataquest-team-data.json",
+  glue::glue("progress-data/{date}_dataquest-team-data.json"),
   simplifyVector = TRUE
 )
 
 mission_progress <- all_data$mission_progress
+mission_progress$query_date <- date
 
-resp_time_spent <- all_data$time_spent
+all_data_start_break_week <- all_data <- jsonlite::read_json(
+  glue::glue("progress-data/2025-06-16_dataquest-team-data.json"),
+  simplifyVector = TRUE
+)
+
+mission_progress_start_break_week <- all_data_start_break_week$mission_progress
+mission_progress_start_break_week$query_date <- as.Date("2025-06-16")
+
+time_spent <- all_data$time_spent
 
 active_users <- time_spent |>
   filter(
@@ -52,6 +65,7 @@ active_users <- time_spent |>
 n_participants <- nrow(active_users)
 
 mission_prog_distinct <- mission_progress |>
+  bind_rows(mission_progress_start_break_week) |>
   select(-path, -path_id, -step) |>
   semi_join(active_users, by = "email") |>
   filter(
@@ -63,7 +77,8 @@ mission_prog_distinct <- mission_progress |>
     email,
     course_id,
     course,
-    mission
+    mission,
+    query_date
   ) |>
   summarise(
     across(
@@ -91,7 +106,8 @@ progress_summary <- da_curriculum_progress |>
     path,
     course,
     lesson,
-    lesson_time_hours
+    lesson_time_hours,
+    query_date
   ) |>
   summarise(
     participants_started = sum(!is.na(progress_pct)),
@@ -113,8 +129,9 @@ library(scales)
 progress_summary |>
   ggplot(aes(
     x = factor(da_lesson_id),
-    y = percent_completed,
-    colour = course
+    y = percent_started,
+    colour = course,
+    shape = format(query_date, "%Y-%m-%d")
   )) +
   geom_point(
     alpha = 0.7,
@@ -125,7 +142,8 @@ progress_summary |>
     subtitle = glue::glue("Total number of participants: {n_participants}"),
     x = "Lesson",
     y = "Percent of Participants Completed",
-    colour = "Course"
+    colour = "Course",
+    shape = "Before/After Break Week"
   ) +
   scale_y_continuous(
     labels = scales::percent_format(scale = 1),
@@ -137,6 +155,3 @@ progress_summary |>
     plot.subtitle = element_text(size = 12, color = "gray60")
   ) +
   facet_wrap(vars(monday_date), nrow = 1, scales = "free_x")
-
-# when completed vs scheduled
-# Plot 2: Completed vs Scheduled
