@@ -197,6 +197,8 @@ https://dsserver-prod-resources-1.s3.amazonaws.com/516/sales2019.csv and
 saved it in the working directory as `sales2019.csv`.
 
 ``` r
+library(tidyverse)
+
 sales2019 <- read_csv("sales2019.csv", show_col_types = FALSE)
 ```
 
@@ -238,12 +240,21 @@ comprehensively with:
 ``` r
 library(purrr)
 
+# Check for any missing values in the entire data frame
 anyNA(sales2019)
 ```
 
     [1] TRUE
 
 ``` r
+# Check for missing values in specific columns
+anyNA(sales2019$title)
+```
+
+    [1] FALSE
+
+``` r
+# Check for missing values in all columns
 map(sales2019, anyNA)
 ```
 
@@ -266,9 +277,22 @@ We can also get a count of the number of missing values in each column:
 
 ``` r
 count_na <- function(x) {
-  sum(is.na(x))
+  is_na <- is.na(x)
+  sum(is_na)
 }
 
+count_na(sales2019$date)
+```
+
+    [1] 0
+
+``` r
+count_na(sales2019$user_submitted_review)
+```
+
+    [1] 885
+
+``` r
 map(sales2019, count_na)
 ```
 
@@ -339,14 +363,26 @@ logical column indicating whether the review is positive or not.
 ``` r
 library(stringr)
 
+# This looks for the word "Awesome" in the user-submitted review
 sales2019_cleaned <- sales2019_cleaned %>%
   mutate(
     positive_review = str_detect(
       user_submitted_review,
-      regex(
-        "(good)|(great)|(excellent)|(awesome)|(learned)",
-        ignore_case = TRUE
-      )
+      "Awesome"
+    )
+  )
+
+# We can also check if the review contains other positive words, check the reviews
+# manually for examples.
+
+# Enclosing the pattern in `str_detect` in `regex()` allows us to specify more
+# options, such as case insensitivity.
+sales2019_cleaned <- sales2019_cleaned %>%
+  mutate(
+    positive_review = str_detect(
+      user_submitted_review,
+      # strings separated by the pipe character `|` (or) are treated as alternatives
+      regex("awesome|never read a better|learned a lot", ignore_case = TRUE)
     )
   )
 ```
