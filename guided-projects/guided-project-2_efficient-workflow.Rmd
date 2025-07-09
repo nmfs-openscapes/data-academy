@@ -65,8 +65,13 @@ The columns are all of type `character`, except for `price` which is `double`.
 
 ```{r}
 for (col in colnames(book_reviews)) {
+  # In each iteration of the loop, `col` gains a new value - the name of the 
+  # column ("book", "review", "state", "price")
+  # Use the `unique()` function to get the unique values of the current column
   unique_vals <- unique(book_reviews[[col]])
+  # Print a heading for each iteration of the loop (\n means new line)
   cat(paste0("Unique values in ", col, ":\n"))
+  # Then print the values
   print(unique_vals)
 }
 ```
