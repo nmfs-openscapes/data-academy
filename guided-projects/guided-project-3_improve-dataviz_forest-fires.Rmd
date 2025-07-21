@@ -1,0 +1,214 @@
+---
+title: "Guided Project: Analyzing Forest Fire Data"
+format: gfm
+---
+
+```{r}
+#| include: false
+
+data_file <- "forestfires.csv"
+
+if (!file.exists(data_file)) {
+  download.file(
+    "https://dsserver-prod-resources-1.s3.amazonaws.com/277/forestfires.csv",
+    destfile = data_file
+  )
+}
+```
+
+
+
+### 2. The Importance of Forest Fire Data
+
+```{r}
+library(tidyverse)
+
+forestfires <- read_csv(
+  "forestfires.csv",
+  show_col_types = FALSE
+)
+
+glimpse(forestfires)
+```
+
+Each row represents a single forest fire, with the following columns:
+
+- **X, Y**: Spatial coordinates within the Montesinho park map (1-9 scale)
+- **month**: Month of the year (jan, feb, mar, ..., dec)
+- **day**: Day of the week (mon, tue, wed, thu, fri, sat, sun)
+- **FFMC**: Fine Fuel Moisture Code - measures moisture content of litter and fine fuels. Higher values indicate drier conditions and higher fire risk (0-101 scale)
+- **DMC**: Duff Moisture Code - measures moisture content of loosely compacted decomposing matter. Higher values indicate drier conditions in deeper organic layers
+- **DC**: Drought Code - measures moisture content in deep, compact organic layers. Indicates seasonal drought effect on forest fuels with slow drying and wetting
+- **ISI**: Initial Spread Index - combines wind speed and FFMC to indicate expected rate of fire spread. Higher values indicate faster potential fire spread
+- **temp**: Outside temperature in Celsius degrees
+- **RH**: Outside relative humidity in percentage
+- **wind**: Outside wind speed in km/h
+- **rain**: Outside rain in mm/m²
+- **area**: Burned area of the forest in hectares. Values of 0 indicate fires that burned less than 1 hectare
+
+The Fire Weather Index System (FFMC, DMC, DC, ISI) uses meteorological inputs to assess fire danger. FFMC responds quickly to weather changes, DMC reflects medium-term drought effects, and DC indicates long-term drought conditions.
+
+## 3: Data Processing
+
+For the months, we can use the built-in `month.abb` object to ensure they are ordered correctly, but we have to convert it to lowercase since our data is all lowercase. For the days of the week, we can use a custom order from Sunday to Saturday.
+
+```{r}
+forestfires <- forestfires |>
+  mutate(
+    month = factor(month, levels = tolower(month.abb), ordered = TRUE),
+    day = factor(
+      day,
+      levels = c("sun", "mon", "tue", "wed", "thu", "fri", "sat"),
+      ordered = TRUE
+    )
+  )
+
+levels(forestfires$month)
+levels(forestfires$day)
+```
+
+## 4: When Do Most Forest Fires Occur?
+
+
+```{r}
+fires_by_month <- forestfires |>
+  group_by(month) |>
+  summarise(total_fires = n(), .groups = "drop") |>
+  arrange(month)
+
+fires_by_day <- forestfires |>
+  group_by(day) |>
+  summarise(total_fires = n(), .groups = "drop") |>
+  arrange(day)
+```
+
+
+```{r}
+ggplot(fires_by_month, aes(x = month, y = total_fires)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Total Forest Fires by Month",
+    x = "Month",
+    y = "Total Fires"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(fires_by_day, aes(x = day, y = total_fires)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Total Forest Fires by Day of the Week",
+    x = "Day of the Week",
+    y = "Total Fires"
+  ) +
+  theme_minimal()
+```
+
+## 5: Plotting Other Variables Against Time
+
+
+```{r}
+forestfires_long <- forestfires |>
+  pivot_longer(
+    cols = c(FFMC, DMC, DC, ISI, temp, RH, wind, rain),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+forestfires_month_long <- forestfires_long |>
+  group_by(month, variable) |>
+  summarise(
+    avg_value = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+
+
+```{r}
+ggplot(forestfires_month_long, aes(x = month, y = avg_value, fill = variable)) +
+  geom_col() +
+  labs(
+    title = "Average Values of Meteorological Variables by Month",
+    x = "Month",
+    y = "Average Value"
+  ) +
+  theme_minimal() +
+  # Adjust the x-axis text for better readability
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  # remove the legend since we are using facets that give the same information
+  scale_fill_discrete(guide = "none") +
+  facet_wrap(~variable, scales = "free_y")
+```
+
+## 6: Examining Forest Fire Severity
+
+
+```{r}
+forestfires_long |>
+  ggplot(aes(x = value, y = area)) +
+  # Using alpha to reduce overplotting
+  geom_point(aes(color = variable), alpha = 0.5) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Meteorological Variables and Burned Area",
+    x = "Meteorological Variable Value",
+    y = "Burned Area (hectares)"
+  ) +
+  scale_color_discrete(guide = "none")
+```
+
+## 7: Outlier Problems
+
+### Remove zero-area fires
+
+```{r}
+forestfires_long |>
+  filter(area > 0) |>
+  ggplot(aes(x = value, y = area)) +
+  geom_point(aes(color = variable), alpha = 0.5) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Meteorological Variables and Burned Area",
+    x = "Meteorological Variable Value",
+    y = "Burned Area (hectares)"
+  ) +
+  scale_color_discrete(guide = "none")
+```
+
+### Remove very large fires
+
+```{r}
+forestfires_long |>
+  filter(area < 100) |>
+  ggplot(aes(x = value, y = area)) +
+  geom_point(aes(color = variable), alpha = 0.5) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Meteorological Variables and Burned Area",
+    x = "Meteorological Variable Value",
+    y = "Burned Area (hectares)"
+  ) +
+  scale_color_discrete(guide = "none")
+```
+
+### Fires between 10 and 200 ha
+
+```{r}
+forestfires_long |>
+  filter(area >= 10, area <= 200) |>
+  ggplot(aes(x = value, y = area)) +
+  geom_point(aes(color = variable), alpha = 0.5) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Meteorological Variables and Burned Area",
+    x = "Meteorological Variable Value",
+    y = "Burned Area (hectares)"
+  ) +
+  scale_color_discrete(guide = "none")
+```
