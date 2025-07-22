@@ -127,7 +127,9 @@ ggplot(fires_by_month, aes(x = month, y = total_fires)) +
   theme_minimal()
 ```
 
-![](guided-project-3_improve-dataviz_forest-fires_files/figure-commonmark/unnamed-chunk-5-1.png)
+<img
+src="guided-project-3_improve-dataviz_forest-fires_files/figure-commonmark/unnamed-chunk-5-1.png"
+style="width:70.0%" data-fig-align="center" />
 
 ``` r
 ggplot(fires_by_day, aes(x = day, y = total_fires)) +
@@ -239,6 +241,20 @@ forestfires_long |>
 
 ### Fires between 10 and 200 ha
 
+This plot illustrates adjusting figure sizing and aspect ratio. The
+chunk options are specified as:
+
+
+    ::: {.cell layout-align="center"}
+
+    ```{.r .cell-code}
+    # ggplot code here
+    ```
+    :::
+
+Because this document renders to Markdown, the `fig.align` option is not
+effective. However, it is useful when rendering to HTML or PDF formats.
+
 ``` r
 forestfires_long |>
   filter(area >= 10, area <= 200) |>
@@ -254,4 +270,6 @@ forestfires_long |>
   scale_color_discrete(guide = "none")
 ```
 
-![](guided-project-3_improve-dataviz_forest-fires_files/figure-commonmark/unnamed-chunk-12-1.png)
+<img
+src="guided-project-3_improve-dataviz_forest-fires_files/figure-commonmark/unnamed-chunk-13-1.png"
+style="width:70.0%" />

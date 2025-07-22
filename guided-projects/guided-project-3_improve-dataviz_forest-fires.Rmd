@@ -83,7 +83,7 @@ fires_by_day <- forestfires |>
 ```
 
 
-```{r}
+```{r, fig.width = 6, fig.asp = 0.618, out.width = "70%", fig.align = "center"}
 ggplot(fires_by_month, aes(x = month, y = total_fires)) +
   geom_col(fill = "steelblue") +
   labs(
@@ -198,7 +198,16 @@ forestfires_long |>
 
 ### Fires between 10 and 200 ha
 
-```{r}
+This plot illustrates adjusting figure sizing and aspect ratio. The chunk options are specified as:
+````
+```{r, fig.width = 6, fig.asp = 0.618, out.width = "70%", fig.align = "center"}
+# ggplot code here
+```
+````
+
+Because this document renders to Markdown, the `fig.align` option is not effective. However, it is useful when rendering to HTML or PDF formats.
+
+```{r, fig.width = 6, fig.asp = 0.618, out.width = "70%"}
 forestfires_long |>
   filter(area >= 10, area <= 200) |>
   ggplot(aes(x = value, y = area)) +
